@@ -1,0 +1,181 @@
+<%method load_tinymce>
+<!-- TinyMCE -->
+<script type="text/javascript" src="/scripts/tinymce3/tiny_mce.js"></script>
+<script type="text/javascript" src="/scripts/tinymce3/obvius_scripts/navigator.js"></script>
+<script type="text/javascript" src="/scripts/tinymce3/obvius_scripts/xhtml_validation.js"></script>
+%# XXX <script type="text/javascript" src="/scripts/admin_validator.js"></script>
+<script type="text/javascript">
+	tinyMCE.init({
+		// General options
+		mode : 'specific_textareas',
+		editor_selector : "mceEditor",
+
+		width : '552',
+		height: '350',
+		language : 'da',
+		theme : 'advanced',
+		document_base_url : "<% $uri %>",
+		relative_urls : false,
+
+		plugins : 'advimage, advlink, table, searchreplace',
+
+		theme_advanced_toolbar_location : "top",
+		theme_advanced_toolbar_align : "left",
+
+		theme_advanced_buttons1: "formatselect,|,bold,italic,underline,strikethrough,|,sup,sub,removeformat,charmap,|,justifyleft,justifycenter,justifyright,justifyfull",
+		theme_advanced_buttons2: "cut,copy,paste,|,bullist,numlist,|,outdent,indent,|,undo,redo,|,link,unlink,anchor,|,image,help,|,search,replace,|,code,cleanup,w3ccheck",
+		theme_advanced_buttons3: "tablecontrols,|,hr,visualaid",
+
+
+		theme_advanced_statusbar_location : "bottom",
+		theme_advanced_resizing : true,
+
+		// Example content CSS (should be your site CSS)
+		content_css : "/css/editorcss.css",
+
+		theme_advanced_blockformats : "p,address,h1,h2,h3",
+
+		/* Validation and cleanup */
+		doctype : '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
+		valid_elements : valid_xhtml_elements,
+		entity_encoding : 'named',
+		fix_list_elements : true,
+		fix_table_elements : true,
+		fix_nesting : true,
+
+
+		file_browser_callback : "obvius_tinymce_new_navigator_callback"
+
+
+
+/*
+		plugins : "pagebreak,style,layer,table,save,advhr,advimage,advlink,emotions,iespell,inlinepopups,insertdatetime,preview,media,searchreplace,print,contextmenu,paste,directionality,fullscreen,noneditable,visualchars,nonbreaking,xhtmlxtras,template,wordcount,advlist,autosave",
+
+		theme_advanced_buttons1 : "save,newdocument,|,bold,italic,underline,strikethrough,|,justifyleft,justifycenter,justifyright,justifyfull,styleselect,formatselect,fontselect,fontsizeselect",
+		theme_advanced_buttons2 : "cut,copy,paste,pastetext,pasteword,|,search,replace,|,bullist,numlist,|,outdent,indent,blockquote,|,undo,redo,|,link,unlink,anchor,image,cleanup,help,code,|,insertdate,inserttime,preview,|,forecolor,backcolor",
+		theme_advanced_buttons3 : "tablecontrols,|,hr,removeformat,visualaid,|,sub,sup,|,charmap,emotions,iespell,media,advhr,|,print,|,ltr,rtl,|,fullscreen",
+		theme_advanced_buttons4 : "insertlayer,moveforward,movebackward,absolute,|,styleprops,|,cite,abbr,acronym,del,ins,attribs,|,visualchars,nonbreaking,template,pagebreak,restoredraft",
+*/
+
+	});
+</script>
+<!-- /TinyMCE -->
+<%init>
+return if($r->notes('obvius_tinymce3_loaded'));
+$r->notes('obvius_tinymce3_loaded' => 1);
+</%init>
+</%method>
+
+
+<%method block>
+<& tinymce3:load_tinymce &>
+<& /shared/editengine2/type/util/label, name=>$prefix . $field->{name}, label=>$field->{label}, field=>$field &>
+%
+<textarea class="mceEditor" id="<% $name %>" name="<% $name %>" cols="<% $cols %>" rows="<% $rows %>" style="height: <% $height %>px; width: <% $width %>px;" wrap="<% $wrap %>" tabindex="10"><% $value |h %></textarea>
+%
+<noscript>
+<p><& /shared/msg, text=>'The XHTML in this field will be validated when you save the document' &>.</p>
+</noscript>
+
+% # Notice that this has been changed from obvius_$name_compare to $name_editor_compare, here:
+<input type="hidden" name="<% $name %>_editor_compare" value="<% $value |h %>"/>
+%
+%
+<%args>
+$prefix
+$field
+$validation
+$value=>''
+$disabled=>0
+$cols=>60
+$rows=>20
+$wrap=>1
+</%args>
+%
+<%init>
+use Data::Dumper;
+$value=$value->{value} if (ref $value eq 'HASH');
+
+$value=$m->scomp('/shared/printhtml', html=>$value, noprefix=>1, norel => 1) if ($value);
+	$value=$m->scomp('/shared/xhtml2editorhtml', html=>$value) if ($value);
+
+	# Figure out whether we are creating a new document or editing an old.
+	# If we are creating a new one we should add the documents name
+	# to the document base used in the editors
+	my $uri_extra = '';
+	##if(my $ses_doc = $session->{document}) {
+	##    unless($ses_doc->param('id')) {
+	##        $uri_extra = $ses_doc->param('name') . '/';
+	##    }
+	##}
+
+	my $width=$cols*11;      # XXX?!
+	my $height=$rows*35; # XXX?!
+
+	my $name=$prefix . $field->{name};
+
+	my $closest_subsite = $obvius->find_closest_subsite($doc);
+	if ($closest_subsite) {
+	     $closest_subsite = $obvius->get_doc_uri($doc);
+	} else {
+	     $closest_subsite = '';
+	}
+
+</%init>
+%
+</%method>
+%
+%
+%
+<%method inline>
+%
+<% $value->{value} |h %>\
+%
+<%args>
+$value
+</%args>
+%
+</%method>
+%
+%
+%
+% # Validation:
+%
+<%args>
+$data
+$id
+$validation
+</%args>
+%
+<%init> #'
+my $ret='OK';
+
+
+# Docidify hrefs and srcs so links and images wont be broken when moving documents:
+$data->{$id}=$m->scomp('/shared/docidify', html=>$data->{$id});
+# Run the component that converts the HTML that the editor uses to XHTML:
+$data->{$id}=$m->scomp('/shared/editorhtml2xhtml', html=>$data->{$id});
+
+
+# If we got a fieldspec, use that for validation:
+$ret=$m->comp('/shared/editengine2/type/util/validate_by_fieldspec', %ARGS) if (exists $validation->{validate_by_fieldspec});
+
+if ( $obvius->config->param( 'skip_editor_validation' ) )
+{
+  return $ret;
+}
+
+
+if ($ret eq 'OK') { # Now check XHTML validity:
+
+    my ($status, $error_count, undef, undef, $result)=$m->comp('/shared/validator/validate', html=>$data->{$id});
+    $ret='not-valid' if ($status ne 'Unknown' and $status ne 'Valid');
+
+    if ($ret ne 'OK') { # XXX Just for debuggin'
+        print STDERR "\n\nHTML: [", $data->{$id}, "]\nRET: $ret\n";
+        print STDERR $result, "\n";
+    }
+}
+
+return $ret;
+</%init>
