@@ -1,6 +1,8 @@
 function obvius_tinymce_html_cleanup(type, content) {
+    console.log("Calling html cleanup with type: " + type);
     switch (type) {
         case "insert_to_editor":
+            // Called when loading content on startup
         case "setup_content":
             content = obvius_tinymce_remove_word_leftover(content);
             content = obvius_tinymce_fix_empty_border_attributes_in_content(content);
@@ -17,15 +19,14 @@ function obvius_tinymce_html_cleanup(type, content) {
         case "submit_content":
             break;
         case "get_from_editor_dom":
+            // Used when transfering HTML to the edit HTML dialog
         case "submit_content_dom":
-            obvius_tinymce_border_to_style(content, "img");
-            obvius_tinymce_remove_border_attribute(content, "img");
-            obvius_tinymce_border_to_style(content, "table");
             obvius_tinymce_remove_img_prefix(content);
             cleanupFormatingStyles(content);
             break;
     }
     return content;
+    console.log("Calling html cleanup with type: " + type);
 }
 
 String.prototype.startsWith = function(s) { return this.indexOf(s)==0; };
@@ -135,8 +136,8 @@ function obvius_tinymce_fix_caption_p_tags(rootElem) {
 
 
 function getStyleArray(e) {
-    var stylesArray = tinyMCE.parseStyle(tinyMCE.getAttrib(e, "style"));
-    tinyMCE.compressStyle(stylesArray, "border", "-width", "border-width");
+    var stylesArray = tinyMCE.DOM.parseStyle(tinymce.DOM.getAttrib(e, "style"));
+    tinymce.dom.DOMUtils.compressStyle(stylesArray, "border", "-width", "border-width");
     return stylesArray;
 }
 
@@ -151,15 +152,15 @@ function replaceFormatingStylesWithTags(rootElement, styleAttribute, styleValue,
     var tmpArray = rootElement.getElementsByTagName("SPAN");
     for (var i = (tmpArray.length - 1); i >= 0; i--) {
         var spanElement = tmpArray[i];
-        var spanStyles = tinyMCE.getAttrib(spanElement, "style");
+        var spanStyles = tinymce.DOM.getAttrib(spanElement, "style");
         var spanStyleRE = new RegExp(styleAttribute + ":[^;\"']*?" + styleValue + "[^;\"']*?;?\\s*", "mgi");
         var emptySpanTagRE = new RegExp("<span>", "mgi");
         var styleValueRE = new RegExp("\\s*" + styleValue + "\\s*", "mgi");
         if (spanStyleRE.test(spanStyles)) {
             var newElement = document.createElement(tagName);
-            var stylesArray = tinyMCE.parseStyle(spanStyles);
+            var stylesArray = tinyMCE.DOM.parseStyle(spanStyles);
             stylesArray[styleAttribute] = stylesArray[styleAttribute].replace(styleValueRE, '');
-            tinyMCE.setAttrib(spanElement, "style", tinyMCE.serializeStyle(stylesArray));
+            tinyMCE.DOM.setAttrib(spanElement, "style", tinyMCE.DOM.serializeStyle(stylesArray));
             var tmpElement = document.createElement("div");
             tmpElement.appendChild(spanElement.cloneNode(false));
                 if (emptySpanTagRE.test(tmpElement.innerHTML)) {
