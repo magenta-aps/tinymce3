@@ -1,122 +1,139 @@
-function obvius_tinymce_html_cleanup(type, content) {
-    console.log("Calling html cleanup with type: " + type);
-    switch (type) {
-        case "insert_to_editor":
-            // Called when loading content on startup
-        case "setup_content":
-            content = obvius_tinymce_remove_word_leftover(content);
-            content = obvius_tinymce_fix_empty_border_attributes_in_content(content);
-            content = obvius_tinymce_fix_missing_embed_end_tags(content);
-            break;
-        case "insert_to_editor_dom":
-        case "setup_content_dom":
-            obvius_tinymce_replaceWordParagraphs(content);
-            obvius_tinymce_fix_caption_p_tags(content);
-            obvius_tinymce_insert_img_prefix(content);
-            cleanupFormatingStyles(content);
-            break;
-        case "get_from_editor":
-        case "submit_content":
-            break;
-        case "get_from_editor_dom":
-            // Used when transfering HTML to the edit HTML dialog
-        case "submit_content_dom":
-            obvius_tinymce_remove_img_prefix(content);
-            cleanupFormatingStyles(content);
-            break;
+// Make changes to HTML after it has been loaded from the CMS
+function obvius_tinymce_cleanup_after_set(editor, o) {
+    if(o.load) {
+        obvius_tinymce_cleanup_after_load(editor, o)
     }
-    return content;
-    console.log("Calling html cleanup with type: " + type);
 }
 
-String.prototype.startsWith = function(s) { return this.indexOf(s)==0; };
-
-function obvius_tinymce_insert_img_prefix(rootElement) {
-    obvius_tinymce_insert_or_remove_all_img_prefix(rootElement, true);
-}
-
-function obvius_tinymce_remove_img_prefix(rootElement) {
-  obvius_tinymce_insert_or_remove_all_img_prefix(rootElement, false);
-}
-
-function obvius_tinymce_insert_or_remove_all_img_prefix(rootElement, insertPrefix) {
-    var tmpArray = rootElement.getElementsByTagName("img");
-    for (var i = (tmpArray.length - 1); i >= 0; i--) {
-        var srcAttribute = tmpArray[i].getAttribute("src");
-        var newSrcAttribute = obvius_tinymce_insert_or_remove_img_prefix(srcAttribute, insertPrefix);
-        if (srcAttribute != newSrcAttribute) {
-                tmpArray[i].setAttribute("src", newSrcAttribute);
+function obvius_tinymce_cleanup_after_load(editor, o) {
+    // Convert onclick="this.target='_whatever'" to target="_whatever"
+    var targetRegEx = new RegExp("^this.target='([^']+)'$");
+    tinymce.each(editor.dom.select('a'), function(a) {
+        var onclick = editor.dom.getAttrib(a, 'onclick');
+        var match = targetRegEx.exec(onclick);
+        if(match && match.length > 1) {
+            editor.dom.setAttrib(a, 'onclick', null);
+            editor.dom.setAttrib(a, 'target', match[1]);
         }
-    }
-}
+    })
 
-function obvius_remove_trailing_slash(string) {
-    return string.replace(/\/+$/,"");
-}
+    // Convert <div class="indent"></div> to padding-left on contained
+    // elements.
+    if(! editor.getParam('dont_convert_indentation')) {
+        var indentation = editor.getParam('indentation') || '30px';
 
-function obvius_add_trailing_slash(string) {
-    if (!string.match(/\/$/)) {
-        return string + "/";
-    } else {
-        return string;
-    }
-}
+        var indent_unit = indentation.substr(indentation.length - 2, 2) || '';
+        if(indent_unit != "pt")
+            indent_unit = "px";
+        
+        indentation = parseInt(indentation);
+        
+        var rootChildren = editor.dom.getRoot().childNodes;
+        for(var i = rootChildren.length-1;i>=0;i--) {
+            elem = rootChildren[i];
 
-function obvius_tinymce_insert_or_remove_img_prefix(srcAttribute, insertPrefix) {
-    var obvius_img_url_prefix = tinyMCE.getParam("obvius_img_url_prefix", "");
-    if (obvius_img_url_prefix.length > 0) {
-        if (insertPrefix) {
-            if ((srcAttribute.startsWith("/") && !srcAttribute.startsWith("/" + obvius_img_url_prefix)) || (srcAttribute.startsWith("\\") && !srcAttribute.startsWith("\\" + obvius_img_url_prefix))) {
-                var ret =  obvius_remove_trailing_slash("/" + obvius_img_url_prefix + srcAttribute);
-                return ret;
-            }
-        } else {
-            if (srcAttribute.startsWith("/" + obvius_img_url_prefix) || srcAttribute.startsWith("\\" + obvius_img_url_prefix)) {
-                var ret = obvius_add_trailing_slash(srcAttribute.substring(obvius_img_url_prefix.length + 1));
-                return ret;
-            }
-        }
-    }
-    return srcAttribute;
-}
+            if(!elem.tagName || elem.tagName.toLowerCase() != 'div')
+                continue;
 
+            if(!editor.dom.hasClass(elem, "indent"))
+                continue;
+            
+            var indent_amount = indentation;
+            
 
-/* DOM-based: HTML cleaup helpers */
-function obvius_tinymce_replaceWordParagraphs(rootElem)
-{
-    /* Word has a nasty habit of using <P> of some class instead of the correct
-        HTML tag. This method tries to do something about it.
-    */
-    var classMap = new Object();
-    classMap = {
-        Hoved1: "h1",
-        Hoved2: "h2",
-        Hoved3: "h3",
-        Hoved4: "h4",
-        Citat: "cite"
-    };
+            var currentDiv = elem;
+            
+            var done = false;
+            
+            while(! done) {
+                var indentChildren = tinymce.grep(currentDiv.childNodes, function(elem) {
+                    if(!elem.tagName || elem.tagName.toLowerCase() != 'div')
+                        return false;
+                    return editor.dom.hasClass(elem, "indent");
+                });
 
-    tmpArray = rootElem.getElementsByTagName("P");
-
-    //Walk backwards through the array since we are modifying it as we go along
-    for(i = tmpArray.length-1; i>=0 ; i--) {
-        if (classMap[tmpArray[i].className] != null) {
-            var newElem = document.createElement(classMap[tmpArray[i].className]);
-
-            //Add all descendants of the old node to the new node
-            var children = tmpArray[i].childNodes;
-            for (n=0;n<children.length;n++) {
-                nNode = children[n].cloneNode(true); //We need to clone the child because its removed later on
-                newElem.appendChild(nNode);
+                if(indentChildren.length > 0) {
+                    indent_amount += indentation;
+                    currentDiv = indentChildren[0];
+                } else {
+                    done = true;
+                }
             }
 
-            tmpArray[i].parentNode.replaceChild(newElem, tmpArray[i]);
-        }
+            var children = currentDiv.childNodes;
+            for(var j=children.length - 1;j>=0;j--) {
+                var child = children[j];
+                currentDiv.removeChild(child);
+                if(child.tagName)
+                    editor.dom.setStyle(child, "padding-left", indent_amount + indent_unit);
+                editor.dom.insertAfter(child, elem); // elem is the original top div
+            }
+
+            editor.dom.remove(elem);
+        };
+    }    
+}
+
+
+function obvius_tinymce_cleanup_before_get(editor, o) {
+    if(o.save) {
+        obvius_tinymce_cleanup_before_save(editor, o);
     }
 }
 
-function obvius_tinymce_fix_caption_p_tags(rootElem) {
-    var captions = rootElem.getElementsByTagName('caption');
+function obvius_tinymce_cleanup_before_save(editor, o) {
+    // Convert target="_whatever" to onclick="this.target='_whatever'"
+    tinymce.each(editor.dom.select('a'), function(a) {
+        var target = editor.dom.getAttrib(a, "target");
+        if(target) {
+            editor.dom.setAttrib(a, "target", null);
+            editor.dom.setAttrib(a, "onclick", "this.target='" + target + "'");
+        }
+    })
+    
+    // Convert padding-left indentation to nested <div class="indent">
+    // </div> 
+    if(! editor.getParam('dont_convert_indentation')) {
+        var indentation = parseInt(editor.getParam('indentation') || '30px');
+        var rootChildren = editor.dom.getRoot().childNodes;
+        tinymce.each(rootChildren, function(elem) {
+            var indent_value;
+            if(editor.dom.getAttrib(elem, 'style')) // Need this check to avoid getStyle error >_<
+                indent_value = editor.dom.getStyle(elem, "padding-left") || '';
+            if(indent_value) {
+                indent_value = parseInt(indent_value);
+    
+                var divsToCreate = Math.ceil(indent_value / indentation);
+    
+                if(divsToCreate > 0) {
+                    editor.dom.setStyle(elem, "padding-left", null);
+                    
+                    // Create the innermost div
+                    var innerDiv = editor.dom.create('div');
+                    editor.dom.addClass(innerDiv, "indent");
+    
+                    // Add the original element to the innermost div:
+                    innerDiv.appendChild(elem.cloneNode(true));
+    
+                    var current = innerDiv;
+    
+                    // create the rest of the divs
+                    for(var i=1;i<divsToCreate;i++) {
+                        var div = editor.dom.create('div');
+                        editor.dom.addClass(div, "indent");
+                        div.appendChild(current);
+                        current = div;
+                    }
+    
+                    editor.dom.replace(current, elem);    
+                }
+            }
+    
+        });
+    }
+    
+    // Remove <p> tags inside table captions
+    var captions = editor.dom.select('caption');
     if(captions) {
         for(var i=0;i<captions.length;i++) {
             var caption = captions[i];
@@ -131,77 +148,75 @@ function obvius_tinymce_fix_caption_p_tags(rootElem) {
                 }
             }
         }
+    }    
+}
+
+
+function obvius_tinymce_cleanup_on_get(editor, o) {
+    if(o.cleanup && tinymce.plugins.PastePlugin)
+        obvius_tinymce3_word_cleanup(editor, o);
+    
+    o.content = obvius_tinymce_fix_missing_embed_end_tags(o.content);
+}
+
+var obvius_tinymce_word_cleaner;
+
+function obvius_tinymce_get_word_cleaner(editor) {
+    if(obvius_tinymce_word_cleaner) {
+        obvius_tinymce_word_cleaner.editor = editor;
+    } else {
+        // Code below taken from the tinymce.plugins.PastePlugin init function.
+        var t = new tinymce.plugins.PastePlugin();
+        t.editor = editor;
+    
+        t.onPreProcess = new tinymce.util.Dispatcher(t);
+        t.onPostProcess = new tinymce.util.Dispatcher(t);
+    
+        // Register default handlers
+        t.onPreProcess.add(t._preProcess);
+        t.onPostProcess.add(t._postProcess);
+    
+        // Register optional preprocess handler
+        t.onPreProcess.add(function(pl, o) {
+            editor.execCallback('paste_preprocess', pl, o);
+        });
+    
+        // Register optional postprocess
+        t.onPostProcess.add(function(pl, o) {
+            editor.execCallback('paste_postprocess', pl, o);
+        });
+
+        obvius_tinymce_word_cleaner = t;
     }
+    
+    return obvius_tinymce_word_cleaner;
 }
 
+function obvius_tinymce3_word_cleanup(editor, o) {
+    // This will not work unless we have the paste plugin, so bail out if we
+    // don't.
+    if(!tinymce.PluginManager.get("paste"))
+        return;
 
-function getStyleArray(e) {
-    var stylesArray = tinyMCE.DOM.parseStyle(tinymce.DOM.getAttrib(e, "style"));
-    tinymce.dom.DOMUtils.compressStyle(stylesArray, "border", "-width", "border-width");
-    return stylesArray;
-}
+    var t = obvius_tinymce_get_word_cleaner(editor);
+    
+    // Force always word cleanup:
+    o.wordContent = true;
+    
+    // The code below have been taken from the first part of the plugin's
+    // init.process function:
+    
+    // Execute pre process handlers
+    t.onPreProcess.dispatch(t, o);
 
-function cleanupFormatingStyles(rootElement) {
-    replaceFormatingStylesWithTags(rootElement, "font-weight", "bold", "strong");
-    replaceFormatingStylesWithTags(rootElement, "font-style", "italic", "em");
-    replaceFormatingStylesWithTags(rootElement, "text-decoration", "underline", "u");
-    replaceFormatingStylesWithTags(rootElement, "text-decoration", "line-through", "strike");
-}
+    // Create DOM structure
+    o.node = editor.dom.create('div', 0, o.content);
 
-function replaceFormatingStylesWithTags(rootElement, styleAttribute, styleValue, tagName) {
-    var tmpArray = rootElement.getElementsByTagName("SPAN");
-    for (var i = (tmpArray.length - 1); i >= 0; i--) {
-        var spanElement = tmpArray[i];
-        var spanStyles = tinymce.DOM.getAttrib(spanElement, "style");
-        var spanStyleRE = new RegExp(styleAttribute + ":[^;\"']*?" + styleValue + "[^;\"']*?;?\\s*", "mgi");
-        var emptySpanTagRE = new RegExp("<span>", "mgi");
-        var styleValueRE = new RegExp("\\s*" + styleValue + "\\s*", "mgi");
-        if (spanStyleRE.test(spanStyles)) {
-            var newElement = document.createElement(tagName);
-            var stylesArray = tinyMCE.DOM.parseStyle(spanStyles);
-            stylesArray[styleAttribute] = stylesArray[styleAttribute].replace(styleValueRE, '');
-            tinyMCE.DOM.setAttrib(spanElement, "style", tinyMCE.DOM.serializeStyle(stylesArray));
-            var tmpElement = document.createElement("div");
-            tmpElement.appendChild(spanElement.cloneNode(false));
-                if (emptySpanTagRE.test(tmpElement.innerHTML)) {
-                    for (var j = 0; j < spanElement.childNodes.length; j++) {
-                        newElement.appendChild(spanElement.childNodes[j].cloneNode(true));
-                    }
-                } else {
-                    newElement.appendChild(spanElement.cloneNode(true));
-                }
-            spanElement.parentNode.replaceChild(newElement, spanElement);
-        }
-    }
-}
+    // Execute post process handlers
+    t.onPostProcess.dispatch(t, o);
 
-
-/* String-based: HTML cleanup helpers */
-
-function obvius_tinymce_remove_word_leftover(content){
-  content = content.replace(/<\?xml.*\/>/g,'');
-  content = content.replace(/\s*mso-[^;"]*;*(\n|\r)*/g,'');
-  content = content.replace(/\s*page-break-after[^;]*;/g,'');
-  content = content.replace(/\s*tab-interval:[^'"]*['"]/g,'');
-  content = content.replace(/\s*tab-stops:[^'";]*;?/g,'');
-  content = content.replace(/\s*LETTER-SPACING:[^\s'";]*;?/g,'');
-  content = content.replace(/\s*class=MsoNormal/g,'');
-  content = content.replace(/\s*class=MsoBodyText[2345678]?/g,'');
-
-  content = content.replace(/<o:p>/g,'');
-  content = content.replace(/<\/o:p>/g,'');
-
-  content = content.replace(/<v:[^>]*>/g,'');
-  content = content.replace(/<\/v:[^>]*>/g,'');
-
-  content = content.replace(/<w:[^>]*>/g,'');
-  content = content.replace(/<\/w:[^>]*>/g,'');
-
-  return content;
-}
-
-function obvius_tinymce_fix_empty_border_attributes_in_content(content) {
-    return content.replace(/border\s*=\s*[\"|\']\s*[\"|\']/mgi, 'border="0"');
+    // Serialize content
+    o.content = editor.serializer.serialize(o.node, {getInner : 1});
 }
 
 function obvius_tinymce_fix_missing_embed_end_tags(content) {

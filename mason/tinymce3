@@ -3,7 +3,6 @@
 <script type="text/javascript" src="/scripts/tinymce3/tiny_mce.js"></script>
 <script type="text/javascript" src="/scripts/tinymce3/obvius_scripts/navigator.js"></script>
 <script type="text/javascript" src="/scripts/tinymce3/obvius_scripts/cleanup.js"></script>
-<script type="text/javascript" src="/scripts/tinymce3/obvius_scripts/importexport.js"></script>
 <script type="text/javascript" src="/scripts/tinymce3/obvius_scripts/xhtml_validation.js"></script>
 <script type="text/javascript">
 	tinyMCE.init({
@@ -51,12 +50,19 @@
 
 
 		file_browser_callback : obvius_tinymce_new_navigator_callback,
-		//cleanup_callback : obvius_tinymce_html_cleanup
-		
+
 		setup : function(editor) {
-			editor.onBeforeGetContent.add(obvius_tinymce_onsave);
-			editor.onSetContent.add(obvius_tinymce_onload);
+			// After addind loaded content
+			editor.onSetContent.add(obvius_tinymce_cleanup_after_set);
+
+			// Before saving content
+			editor.onBeforeGetContent.add(obvius_tinymce_cleanup_before_get);
+
+			// html-string cleanup before HTML dialog and saving etc.
+			editor.onGetContent.add(obvius_tinymce_cleanup_on_get);
 		}
+
+
 
 %#		Obvius-specific config:
 %#		dont_convert_indentation : false
