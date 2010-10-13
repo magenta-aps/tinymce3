@@ -5,8 +5,6 @@
 * Import/Export
   - Embed-tags
   - block-inside-caption
-  - <p style="margin-left: Xpx" <=> x/30 * <div class="indent">
-  - target="_blank"
 
 * Integration with the new (ruby) navigator
 

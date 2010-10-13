@@ -58,7 +58,8 @@
 			editor.onSetContent.add(obvius_tinymce_onload);
 		}
 
-
+%#		Obvius-specific config:
+%#		dont_convert_indentation : false
 
 /*
 		plugins : "pagebreak,style,layer,table,save,advhr,advimage,advlink,emotions,iespell,inlinepopups,insertdatetime,preview,media,searchreplace,print,contextmenu,paste,directionality,fullscreen,noneditable,visualchars,nonbreaking,xhtmlxtras,template,wordcount,advlist,autosave",
@@ -112,7 +113,7 @@ use Data::Dumper;
 $value=$value->{value} if (ref $value eq 'HASH');
 
 $value=$m->scomp('/shared/printhtml', html=>$value, noprefix=>1, norel => 1) if ($value);
-	$value=$m->scomp('/shared/xhtml2editorhtml', html=>$value) if ($value);
+	#$value=$m->scomp('/shared/xhtml2editorhtml', html=>$value) if ($value);
 
 	# Figure out whether we are creating a new document or editing an old.
 	# If we are creating a new one we should add the documents name
@@ -169,7 +170,7 @@ my $ret='OK';
 # Docidify hrefs and srcs so links and images wont be broken when moving documents:
 $data->{$id}=$m->scomp('/shared/docidify', html=>$data->{$id});
 # Run the component that converts the HTML that the editor uses to XHTML:
-$data->{$id}=$m->scomp('/shared/editorhtml2xhtml', html=>$data->{$id});
+#$data->{$id}=$m->scomp('/shared/editorhtml2xhtml', html=>$data->{$id});
 
 
 # If we got a fieldspec, use that for validation:
