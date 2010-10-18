@@ -19,7 +19,7 @@ function obvius_tinymce_cleanup_after_load(editor, o) {
 
     // Convert <div class="indent"></div> to padding-left on contained
     // elements.
-    if(! editor.getParam('dont_convert_indentation')) {
+    if(editor.getParam('obvius_convert_indentation_to_divs')) {
         var indentation = editor.getParam('indentation') || '30px';
 
         var indent_unit = indentation.substr(indentation.length - 2, 2) || '';
@@ -93,7 +93,7 @@ function obvius_tinymce_cleanup_before_save(editor, o) {
     
     // Convert padding-left indentation to nested <div class="indent">
     // </div> 
-    if(! editor.getParam('dont_convert_indentation')) {
+    if(editor.getParam('obvius_convert_indentation_to_divs')) {
         var indentation = parseInt(editor.getParam('indentation') || '30px');
         var rootChildren = editor.dom.getRoot().childNodes;
         tinymce.each(rootChildren, function(elem) {
