@@ -9,3 +9,4 @@ API should be placed in the obvius/scripts/ folder.
 
 When adding a new plugin or updating the tinymce code run the
 ./build_symlinks.sh script to recreate the necessary symlinks.
+
