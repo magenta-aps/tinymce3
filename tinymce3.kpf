@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Komodo Project File - DO NOT EDIT -->
 <project id="b51cf6d0-42c8-439d-8410-08428615c5ab" kpf_version="4" name="tinymce3.kpf">
-<file id="15b887cd-d215-44e9-9338-4bccc795e2cc" idref="a88a87c3-aaff-4387-af02-406aee7e6d2d" name="editorhtml2xhtml" url="file:///Z:/obvius/mason/common/shared/editorhtml2xhtml">
+<file id="15b887cd-d215-44e9-9338-4bccc795e2cc" idref="a88a87c3-aaff-4387-af02-406aee7e6d2d" name="editorhtml2xhtml" url="../obvius/mason/common/shared/editorhtml2xhtml">
 </file>
 <file id="38ccd85e-7818-4368-b798-4ee2822eae48" idref="a88a87c3-aaff-4387-af02-406aee7e6d2d" name="xhtml2editorhtml" url="file:///Z:/obvius/mason/common/shared/xhtml2editorhtml">
 </file>
-<file id="44aa3ba9-2ded-4382-a24e-7aa47776ebc7" idref="a88a87c3-aaff-4387-af02-406aee7e6d2d" name="tinymce3" url="file:///Z:/obvius/mason/common/shared/editengine2/type/tinymce3">
+<file id="c570b011-1620-4c54-b2e1-210675235779" idref="a88a87c3-aaff-4387-af02-406aee7e6d2d" name="tiny_mce_obvius.js" url="file:///Z:/obvius/docs/scripts/tiny_mce/tiny_mce_obvius.js">
 </file>
 <folder id="a88a87c3-aaff-4387-af02-406aee7e6d2d" idref="b51cf6d0-42c8-439d-8410-08428615c5ab" name="external">
 </folder>
 <preference-set idref="b51cf6d0-42c8-439d-8410-08428615c5ab">
+  <string id="import_exclude_matches">*.*~;*.bak;*.tmp;CVS;.#*;*.pyo;*.pyc;.svn;_svn;*%*;tmp*.html;.DS_Store;.git</string>
+  <string id="import_include_matches"></string>
   <boolean id="import_live">1</boolean>
+  <boolean id="import_recursive">1</boolean>
+  <string id="import_type">useFolders</string>
 </preference-set>
 </project>
