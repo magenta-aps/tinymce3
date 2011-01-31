@@ -60,3 +60,9 @@ newdocument:"Er du sikker p\u00E5 du vil slette alt indhold?",
 toolbar_focus:"Hop til v\u00E6rkt\u00F8jsknapper - Alt+Q, Skift til redigering - Alt-Z, Skift til element sti - Alt-X",
 more_colors:"Flere farver"
 });
+
+
+/* Obvius specific translations */
+tinyMCE.addI18n('da.advanced',{
+paragraph:"Brødtekst"
+});
