@@ -153,70 +153,26 @@ function obvius_tinymce_cleanup_before_save(editor, o) {
 
 
 function obvius_tinymce_cleanup_on_get(editor, o) {
-    if(o.cleanup && tinymce.plugins.PastePlugin)
-        obvius_tinymce3_word_cleanup(editor, o);
-    
+    if(o.cleanup && editor.plugins.paste && !o.wordcleaned) {
+        var pp = editor.plugins.paste;
+        pp.onPreProcess.dispatch(pp, o);
+        o.node = editor.dom.create('div', 0, o.content);
+        pp.onPostProcess.dispatch(pp, o);
+        o.content = editor.serializer.serialize(o.node, {getInner : 1});
+        o.wordcleaned = true;
+    }
+
     o.content = obvius_tinymce_fix_missing_embed_end_tags(o.content);
 }
 
-var obvius_tinymce_word_cleaner;
-
-function obvius_tinymce_get_word_cleaner(editor) {
-    if(obvius_tinymce_word_cleaner) {
-        obvius_tinymce_word_cleaner.editor = editor;
-    } else {
-        // Code below taken from the tinymce.plugins.PastePlugin init function.
-        var t = new tinymce.plugins.PastePlugin();
-        t.editor = editor;
-    
-        t.onPreProcess = new tinymce.util.Dispatcher(t);
-        t.onPostProcess = new tinymce.util.Dispatcher(t);
-    
-        // Register default handlers
-        t.onPreProcess.add(t._preProcess);
-        t.onPostProcess.add(t._postProcess);
-    
-        // Register optional preprocess handler
-        t.onPreProcess.add(function(pl, o) {
-            editor.execCallback('paste_preprocess', pl, o);
-        });
-    
-        // Register optional postprocess
-        t.onPostProcess.add(function(pl, o) {
-            editor.execCallback('paste_postprocess', pl, o);
-        });
-
-        obvius_tinymce_word_cleaner = t;
+function obvius_tinymce_pasteword_cleanup_dom(editor, o) {
+    // Fixup <li> items that start with a <br />
+    var lis = o.node.getElementsByTagName('li');
+    for(var i=0;i<lis.length;i++) {
+        var li = lis[i];
+        if(li.firstChild && li.firstChild.tagName && li.firstChild.tagName.toLowerCase() == 'br')
+            li.removeChild(li.firstChild);
     }
-    
-    return obvius_tinymce_word_cleaner;
-}
-
-function obvius_tinymce3_word_cleanup(editor, o) {
-    // This will not work unless we have the paste plugin, so bail out if we
-    // don't.
-    if(!tinymce.PluginManager.get("paste"))
-        return;
-
-    var t = obvius_tinymce_get_word_cleaner(editor);
-    
-    // Force always word cleanup:
-    o.wordContent = true;
-    
-    // The code below have been taken from the first part of the plugin's
-    // init.process function:
-    
-    // Execute pre process handlers
-    t.onPreProcess.dispatch(t, o);
-
-    // Create DOM structure
-    o.node = editor.dom.create('div', 0, o.content);
-
-    // Execute post process handlers
-    t.onPostProcess.dispatch(t, o);
-
-    // Serialize content
-    o.content = editor.serializer.serialize(o.node, {getInner : 1});
 }
 
 function obvius_tinymce_fix_missing_embed_end_tags(content) {

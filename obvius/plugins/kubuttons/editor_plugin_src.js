@@ -36,6 +36,16 @@
 		    image : url + '/img/addtoplink.gif'
 	    });
 
+	    /* kupasteword is basically the original tinymce paste button with the pastefromword icon.
+	      This is have the same functionality as from the old editor when clicking the pastefromword button.
+	      We expect the paste plugin to catch any actual word content and apply the neccessary filters.
+	    */
+	    ed.addButton('kupasteword', {
+		    title : 'paste.paste_word_desc',
+		    class : "mce_pasteword",
+		    cmd : 'Paste'
+	    });
+
 
 	},
 
