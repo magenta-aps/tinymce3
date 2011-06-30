@@ -18,7 +18,7 @@
 		document_base_url : "<% $uri %>",
 		relative_urls : false,
     
-		plugins : <% $obvius->config->param('tinymce3_plugins') || '"style,layer,table,advhr,advimage,inlinepopups,media,searchreplace,print,contextmenu,paste,directionality,fullscreen,noneditable,nonbreaking,xhtmlxtras,template,advlist,advlink,obvius,kubuttons"' %>,
+		plugins : <% $obvius->config->param('tinymce3_plugins') || '"style,layer,table,advhr,advimage,inlinepopups,media,searchreplace,print,contextmenu,paste,directionality,fullscreen,noneditable,nonbreaking,xhtmlxtras,template,advlink,obvius,kubuttons"' %>,
 
 
 
