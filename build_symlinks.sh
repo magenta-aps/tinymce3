@@ -7,6 +7,10 @@ if [ ! -s $BASEDIR/tiny_mce/obvius_scripts ]; then
     ln -s ../obvius/scripts $BASEDIR/tiny_mce/obvius_scripts
 fi
 
+if [ ! -s $BASEDIR/tiny_mce/obvius_css ]; then
+    ln -s ../obvius/css $BASEDIR/tiny_mce/obvius_css
+fi
+
 for d in $BASEDIR/obvius/plugins/*; do
     NAME=`basename $d`
     LINKNAME=$BASEDIR/tiny_mce/plugins/$NAME
