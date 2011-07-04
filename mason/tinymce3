@@ -50,6 +50,7 @@
 
 		// Example content CSS (should be your site CSS)
 		content_css : "http://<% $r->hostname %>/style/editor.css",
+		popup_css_add : "<% $obvius->config->param('editor_popup_css') || '/scripts/tinymce3/obvius_css/dialog.css' %>",
 
 		/* Validation and cleanup */
 		doctype : '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
