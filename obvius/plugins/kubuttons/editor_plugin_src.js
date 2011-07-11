@@ -8,7 +8,7 @@
 		html += '<span class="left">';
 		html += '<blockquote class="realblockquote" style="float: left; margin: 0pt 20px 10px 0pt;">';
 		html += '<p>';
-		html += '<span class="quote-begin">"</span>Udskift denne tekst med selve citatet. HUSK at ikke slette citationstegnene.<span class="quote-end">"</span> ';
+		html += '<span class="quote-begin">"</span>Udskift denne tekst med selve citatet. HUSK ikke at fjerne citationstegnet! ';
 		html += '</p>';
 		html += '<p style="display: block; font-weight: normal; font-size: 0.9em; margin: 0pt; font-style: normal;" align="right">';
 		html += 'Udskift denne tekst med citatets forfatter';
@@ -16,6 +16,7 @@
 		html += '</blockquote>';
 		html += '</span>';
 		html += '</div>';
+		html += '<p>Fortsæt almindelig tekst her.</p>';
 
 		ed.execCommand('mceInsertContent', false, html)
 	    });
@@ -42,7 +43,7 @@
 	    */
 	    ed.addButton('kupasteword', {
 		    title : 'paste.paste_word_desc',
-		    class : "mce_pasteword",
+		    'class' : "mce_pasteword",
 		    cmd : 'Paste'
 	    });
 
