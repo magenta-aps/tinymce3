@@ -173,6 +173,12 @@ function obvius_tinymce_pasteword_cleanup_dom(editor, o) {
         if(li.firstChild && li.firstChild.tagName && li.firstChild.tagName.toLowerCase() == 'br')
             li.removeChild(li.firstChild);
     }
+    
+    var tables = o.node.getElementsByTagName('table');
+    for(var i=0;i<tables.length;i++) {
+        var t = tables[i];
+        if(t.border) t.border=0;
+    }
 }
 
 function obvius_tinymce_fix_missing_embed_end_tags(content) {
