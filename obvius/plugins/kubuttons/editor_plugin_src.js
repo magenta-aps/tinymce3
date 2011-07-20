@@ -1,14 +1,71 @@
 (function() {
     tinymce.PluginManager.requireLangPack('kubuttons');
 
+    /* Overrule the inline popup dialog height in gecko */
+    tinymce.create('tinymce.KUWindowManager:tinymce.InlineWindowManager', {
+	KUWindowManager : function(ed) {
+		this.parent(ed);
+	},
+
+	confirm : function(txt, cb, s) {
+	    var t = this, w, h = t.editor.settings.kubuttons_gecko_dialog_height || 170;
+	    w = t.open({
+		title : t,
+		type : 'confirm',
+		button_func : function(s) {
+			if (cb)
+				cb.call(s || t, s);
+
+			t.close(null, w.id);
+		},
+		content : tinymce.DOM.encode(t.editor.getLang(txt, txt)),
+		inline : 1,
+		width : 400,
+		height : h
+	    });
+	    tinymce.DOM.get(w.id + "_content").style.height = (h - 80) + "px";
+	},
+
+	alert : function(txt, cb, s) {
+	    var t = this, w, h = t.editor.settings.kubuttons_gecko_dialog_height || 170;
+
+	    w = t.open({
+		title : t,
+		type : 'alert',
+		button_func : function(s) {
+			if (cb)
+				cb.call(s || t, s);
+
+			t.close(null, w.id);
+		},
+		content : tinymce.DOM.encode(t.editor.getLang(txt, txt)),
+		inline : 1,
+		width : 400,
+		height : h
+	    });
+	    tinymce.DOM.get(w.id + "_content").style.height = (h - 80) + "px";
+	}
+
+    });
+
+
     tinymce.create('tinymce.plugins.KUButtons', {
 	init : function(ed, url) {
+
+	    /* Enable inline popup overrulings */
+	    ed.onBeforeRenderUI.add(function() {
+		if(tinymce.isGecko)
+		    ed.windowManager = new tinymce.KUWindowManager(ed);
+	    });
+
+
+
 	    ed.addCommand('mceKUCitat', function() {
 		var html = '<div class="wrapper-quotation">';
 		html += '<span class="left">';
 		html += '<blockquote class="realblockquote" style="float: left; margin: 0pt 20px 10px 0pt;">';
 		html += '<p>';
-		html += '<span class="quote-begin">"</span>Udskift denne tekst med selve citatet. HUSK at ikke slette citationstegnene.<span class="quote-end">"</span> ';
+		html += '<span class="quote-begin">"</span>Udskift denne tekst med selve citatet. HUSK ikke at fjerne citationstegnet! ';
 		html += '</p>';
 		html += '<p style="display: block; font-weight: normal; font-size: 0.9em; margin: 0pt; font-style: normal;" align="right">';
 		html += 'Udskift denne tekst med citatets forfatter';
@@ -16,6 +73,7 @@
 		html += '</blockquote>';
 		html += '</span>';
 		html += '</div>';
+		html += '<p>Fortsæt almindelig tekst her.</p>';
 
 		ed.execCommand('mceInsertContent', false, html)
 	    });
@@ -42,10 +100,9 @@
 	    */
 	    ed.addButton('kupasteword', {
 		    title : 'paste.paste_word_desc',
-		    class : "mce_pasteword",
+		    'class' : "mce_pasteword",
 		    cmd : 'Paste'
 	    });
-
 
 	},
 
